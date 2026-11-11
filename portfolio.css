@@ -84,13 +84,77 @@
 .portfolio-extra-gallery img { display: block; width: 100%; height: auto; }
 .portfolio-gallery-image { display: block; width: 100%; height: 100%; object-fit: contain; }
 .cube-type-fill .portfolio-gallery-image { object-fit: cover; }
-[data-portfolio-static-tabs]:not([data-portfolio-tabs-ready]) .wixui-tabs__menu-container {
-  display: none;
+.portfolio-book {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 8px;
+  height: 100%;
+  min-width: 0;
 }
 
-[data-portfolio-static-tabs]:not([data-portfolio-tabs-ready]) [role="tabpanel"] {
+.portfolio-book-mobile { height: 252px; }
+.portfolio-book-stage { position: relative; min-width: 0; min-height: 0; }
+.portfolio-book-track {
+  display: flex;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  cursor: grab;
+}
+.portfolio-book-track.is-dragging { scroll-snap-type: none; cursor: grabbing; }
+.portfolio-book-page {
+  display: grid;
+  place-items: center;
+  flex: 0 0 100%;
+  min-width: 0;
+  min-height: 0;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+.portfolio-book-page img {
   width: 100%;
-  height: auto;
-  visibility: visible;
-  overflow: visible;
+  height: 100%;
+  min-height: 0;
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
+}
+.portfolio-book button:not([hidden]) { cursor: pointer; }
+.portfolio-book-stage button {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 42px;
+  height: 42px;
+  border: 1px solid #c8c3d1;
+  border-radius: 50%;
+  background: #fff;
+  color: #181717;
+  font: 30px/1 system-ui, sans-serif;
+}
+.portfolio-book-stage button[aria-disabled="true"] { opacity: .45; cursor: default; }
+.portfolio-book-stage [data-book-prev] { left: 4px; }
+.portfolio-book-stage [data-book-next] { right: 4px; }
+.portfolio-book-thumbs:not([hidden]) {
+  position: relative;
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 3px;
+}
+.portfolio-book-thumbs button {
+  flex: 0 0 78px;
+  height: 78px;
+  border: 2px solid transparent;
+  background: transparent;
+  padding: 2px;
+}
+.portfolio-book-mobile .portfolio-book-thumbs button { flex-basis: 46px; height: 46px; }
+.portfolio-book-thumbs button[aria-current] { border-color: #292534; }
+.portfolio-book-thumbs img { width: 100%; height: 100%; object-fit: contain; }
+.portfolio-book :focus-visible {
+  outline: 2px solid #292534;
+  outline-offset: -2px;
 }

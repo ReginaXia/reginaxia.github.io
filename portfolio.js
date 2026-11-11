@@ -136,32 +136,85 @@ for (const list of document.querySelectorAll('[role="tablist"][data-hook="TabsLi
       select(moves[event.key], true);
     });
   });
-  const fallback = list.closest('[data-portfolio-static-tabs]');
-  if (fallback) {
-    select(Math.max(0, tabs.findIndex(tab => tab.getAttribute('aria-selected') === 'true')));
-    fallback.setAttribute('data-portfolio-tabs-ready', '');
-  }
 }
 
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-const entrances = document.querySelectorAll('[data-portfolio-enter]');
-if (entrances.length && !reducedMotion.matches && 'IntersectionObserver' in window) {
-  const observer = new IntersectionObserver(entries => {
-    for (const { target, isIntersecting } of entries) {
-      if (!isIntersecting) continue;
-      observer.unobserve(target);
-      if (reducedMotion.matches || target.matches(':focus-within')) continue;
-      target.dataset.portfolioEnter = 'playing';
-      // CSS returns to the visible base state even if JS stops during playback.
-      const stop = () => { target.dataset.portfolioEnter = 'done'; };
-      target.addEventListener('focusin', stop, { once: true });
-      Promise.allSettled(target.getAnimations().map(animation => animation.finished)).then(() => {
-        target.removeEventListener('focusin', stop);
-        stop();
-      });
+for (const book of document.querySelectorAll('.portfolio-book')) {
+  const track = book.querySelector('.portfolio-book-track');
+  const prev = book.querySelector('[data-book-prev]');
+  const next = book.querySelector('[data-book-next]');
+  const strip = book.querySelector('.portfolio-book-thumbs');
+  const thumbs = [...strip.querySelectorAll('[data-book-page]')];
+  const last = thumbs.length - 1;
+  const clamp = index => Math.max(0, Math.min(last, index));
+  const position = () => clamp(Math.round(track.scrollLeft / track.clientWidth));
+  let active = -1;
+  let destination;
+  let drag;
+
+  function highlight(index) {
+    if (active === index) return;
+    thumbs[active]?.removeAttribute('aria-current');
+    const thumb = thumbs[index];
+    thumb.setAttribute('aria-current', 'page');
+    prev.setAttribute('aria-disabled', String(index === 0));
+    next.setAttribute('aria-disabled', String(index === last));
+    active = index;
+    if (thumb.offsetLeft < strip.scrollLeft || thumb.offsetLeft + thumb.offsetWidth > strip.scrollLeft + strip.clientWidth) {
+      strip.scrollLeft = thumb.offsetLeft - (strip.clientWidth - thumb.offsetWidth) / 2;
     }
-  }, { rootMargin: '0px 0px -24px 0px' });
-  for (const target of entrances) observer.observe(target);
+  }
+
+  function show(index) {
+    destination = clamp(index);
+    highlight(destination);
+    const smooth = !reducedMotion.matches && Math.abs(position() - destination) === 1;
+    track.scrollTo({ left: destination * track.clientWidth, behavior: smooth ? 'smooth' : 'instant' });
+  }
+
+  prev.addEventListener('click', () => show((destination ?? position()) - 1));
+  next.addEventListener('click', () => show((destination ?? position()) + 1));
+  thumbs.forEach((thumb, i) => thumb.addEventListener('click', () => show(i)));
+  track.addEventListener('keydown', event => {
+    const current = destination ?? position();
+    const index = { ArrowLeft: current - 1, ArrowRight: current + 1, Home: 0, End: last }[event.key];
+    if (index === undefined) return;
+    event.preventDefault();
+    show(index);
+  });
+  track.addEventListener('scroll', () => {
+    if (destination === undefined) highlight(position());
+    else if (Math.abs(track.scrollLeft - destination * track.clientWidth) < 2) destination = undefined;
+  }, { passive: true });
+  track.addEventListener('scrollend', () => {
+    destination = undefined;
+    highlight(position());
+  });
+  track.addEventListener('wheel', () => { destination = undefined; }, { passive: true });
+  track.addEventListener('pointerdown', event => {
+    destination = undefined;
+    // Leave touch and trackpad scrolling to the browser.
+    if (event.pointerType !== 'mouse' || event.button !== 0) return;
+    drag = { x: event.clientX, left: track.scrollLeft, page: position() };
+    track.setPointerCapture(event.pointerId);
+    track.classList.add('is-dragging');
+  });
+  track.addEventListener('pointermove', event => {
+    if (drag) track.scrollLeft = drag.left + drag.x - event.clientX;
+  });
+  function endDrag(event) {
+    if (!drag) return;
+    const distance = drag.x - event.clientX;
+    const index = event.type === 'pointerup' && Math.abs(distance) > 35
+      ? drag.page + Math.sign(distance) : drag.page;
+    drag = undefined;
+    track.classList.remove('is-dragging');
+    show(index);
+  }
+  track.addEventListener('pointerup', endDrag);
+  track.addEventListener('pointercancel', endDrag);
+  prev.hidden = next.hidden = strip.hidden = false;
+  highlight(position());
 }
 
 if (!reducedMotion.matches) {
