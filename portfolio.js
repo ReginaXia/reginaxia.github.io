@@ -136,9 +136,35 @@ for (const list of document.querySelectorAll('[role="tablist"][data-hook="TabsLi
       select(moves[event.key], true);
     });
   });
+  const fallback = list.closest('[data-portfolio-static-tabs]');
+  if (fallback) {
+    select(Math.max(0, tabs.findIndex(tab => tab.getAttribute('aria-selected') === 'true')));
+    fallback.setAttribute('data-portfolio-tabs-ready', '');
+  }
 }
 
-if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+const entrances = document.querySelectorAll('[data-portfolio-enter]');
+if (entrances.length && !reducedMotion.matches && 'IntersectionObserver' in window) {
+  const observer = new IntersectionObserver(entries => {
+    for (const { target, isIntersecting } of entries) {
+      if (!isIntersecting) continue;
+      observer.unobserve(target);
+      if (reducedMotion.matches || target.matches(':focus-within')) continue;
+      target.dataset.portfolioEnter = 'playing';
+      // CSS returns to the visible base state even if JS stops during playback.
+      const stop = () => { target.dataset.portfolioEnter = 'done'; };
+      target.addEventListener('focusin', stop, { once: true });
+      Promise.allSettled(target.getAnimations().map(animation => animation.finished)).then(() => {
+        target.removeEventListener('focusin', stop);
+        stop();
+      });
+    }
+  }, { rootMargin: '0px 0px -24px 0px' });
+  for (const target of entrances) observer.observe(target);
+}
+
+if (!reducedMotion.matches) {
   for (const item of portfolio.background) {
     const host = document.getElementById(item.container);
     if (!host) continue;

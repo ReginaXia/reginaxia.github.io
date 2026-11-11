@@ -84,3 +84,13 @@
 .portfolio-extra-gallery img { display: block; width: 100%; height: auto; }
 .portfolio-gallery-image { display: block; width: 100%; height: 100%; object-fit: contain; }
 .cube-type-fill .portfolio-gallery-image { object-fit: cover; }
+[data-portfolio-static-tabs]:not([data-portfolio-tabs-ready]) .wixui-tabs__menu-container {
+  display: none;
+}
+
+[data-portfolio-static-tabs]:not([data-portfolio-tabs-ready]) [role="tabpanel"] {
+  width: 100%;
+  height: auto;
+  visibility: visible;
+  overflow: visible;
+}
