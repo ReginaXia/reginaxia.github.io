@@ -177,40 +177,62 @@ for (const list of document.querySelectorAll('[role="tablist"][data-hook="TabsLi
 }
 
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-const entrances = document.querySelectorAll('[data-portfolio-enter]');
-if (entrances.length && !reducedMotion.matches && 'IntersectionObserver' in window) {
+const mirageEntrances = document.querySelectorAll('[data-mirage-entrance] img');
+if (mirageEntrances.length && !reducedMotion.matches && 'IntersectionObserver' in window) {
   const observer = new IntersectionObserver(entries => {
-    for (const { target, isIntersecting, boundingClientRect } of entries) {
+    for (const { target: image, isIntersecting } of entries) {
       if (!isIntersecting) continue;
-      observer.unobserve(target);
-      if (reducedMotion.matches) continue;
-
-      target.style.setProperty('--motion-left', boundingClientRect.left + 'px');
-      target.dataset.portfolioEnter = 'playing';
-      // The original CSS only fills backwards. The content is visible again even if this callback fails.
-      Promise.allSettled(target.getAnimations().map(animation => animation.finished)).then(() => {
-        target.dataset.portfolioEnter = 'done';
-        target.style.removeProperty('--motion-left');
-      });
+      observer.unobserve(image);
+      image.decode().then(() => {
+        const { top, bottom } = image.getBoundingClientRect();
+        if (reducedMotion.matches) return;
+        if (bottom <= 0 || top >= window.innerHeight) {
+          observer.observe(image);
+          return;
+        }
+        image.animate([
+          { opacity: 0.62, translate: '0 16px' },
+          { opacity: 1, translate: '0 0' }
+        ], { duration: 620, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' });
+        image.closest('[data-mirage-entrance]').dataset.mirageEntrance = 'played';
+      }).catch(() => {});
     }
-  }, { rootMargin: '0px 0px -40px 0px' });
-  for (const target of entrances) observer.observe(target);
+  }, { threshold: 0.05 });
+  for (const image of mirageEntrances) observer.observe(image);
+}
+
+function startBackgroundVideo(host, item) {
+  if (reducedMotion.matches) return;
+  const layer = host.querySelector('wix-video') || host;
+  const video = element('video', {
+    src: item.video, autoplay: '', muted: '', loop: '', playsinline: '',
+    'aria-hidden': 'true', class: 'portfolio-background'
+  });
+  video.muted = true;
+  video.playbackRate = item.rate || 1;
+  layer.classList.add('portfolio-background-host');
+  layer.append(video);
+  video.play().catch(() => video.remove());
 }
 
 if (!reducedMotion.matches) {
+  const deferred = new Map();
   for (const item of portfolio.background) {
     const host = document.getElementById(item.container);
     if (!host) continue;
-    const layer = host.querySelector('wix-video') || host;
-    const video = element('video', {
-      src: item.video, autoplay: '', muted: '', loop: '', playsinline: '',
-      'aria-hidden': 'true', class: 'portfolio-background'
-    });
-    video.muted = true;
-    video.playbackRate = item.rate || 1;
-    layer.classList.add('portfolio-background-host');
-    layer.append(video);
-    video.play().catch(() => video.remove());
+    if (item.defer && 'IntersectionObserver' in window) deferred.set(host, item);
+    else startBackgroundVideo(host, item);
+  }
+  if (deferred.size) {
+    const observer = new IntersectionObserver(entries => {
+      for (const { target, isIntersecting } of entries) {
+        if (!isIntersecting) continue;
+        observer.unobserve(target);
+        startBackgroundVideo(target, deferred.get(target));
+        deferred.delete(target);
+      }
+    }, { rootMargin: '250px' });
+    for (const host of deferred.keys()) observer.observe(host);
   }
 }
 
@@ -240,13 +262,14 @@ for (const tile of document.querySelectorAll('[data-hook="item-container"][data-
   if (!item) continue;
   let tileImage = tile.querySelector('img');
   const imageSlot = tile.querySelector('[data-hook="image-item"], [data-hook="item-wrapper"]');
-  if (!tileImage && imageSlot && item.image) {
-    tileImage = element('img', { src: item.image, alt: item.title, loading: 'lazy', class: 'portfolio-gallery-image' });
+  const preview = item.preview || item.image;
+  if (!tileImage && imageSlot && preview) {
+    tileImage = element('img', { src: preview, alt: item.title, loading: 'lazy', class: 'portfolio-gallery-image' });
     imageSlot.append(tileImage);
   }
   if (tileImage && item.image && !tileImage.getAttribute('src')?.startsWith('/assets/')) {
     tileImage.srcset = '';
-    tileImage.src = item.image;
+    tileImage.src = preview;
   }
   if (tileImage) {
     renderedItems.add(tile.dataset.id);
@@ -319,7 +342,7 @@ if (remaining.length) {
   const gallery = element('section', { class: 'portfolio-extra-gallery', 'aria-label': 'More project images' });
   for (const [, item] of remaining) {
     const link = element('a', { href: item.link || item.image });
-    link.append(element('img', { src: item.image, alt: item.title, loading: 'lazy' }));
+    link.append(element('img', { src: item.preview || item.image, alt: item.title, loading: 'lazy' }));
     if (!item.link) link.addEventListener('click', event => {
       event.preventDefault();
       activate(item);
