@@ -1,0 +1,43 @@
+.portfolio-player {
+  width: 100%;
+  height: 100%;
+  min-height: 12rem;
+  display: block;
+  border: 0;
+}
+.portfolio-background {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+.portfolio-menu {
+  position: fixed;
+  inset: 4.5rem 0 auto;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - 4.5rem);
+  overflow: auto;
+  padding: .75rem 1.25rem;
+  background: #15151a;
+  color: #fff;
+}
+.portfolio-menu[hidden] { display: none; }
+.portfolio-menu a { color: inherit; padding: .6rem; }
+.portfolio-menu-inline { position: static; }
+.portfolio-lightbox { border: 0; background: #17171c; padding: 1rem; }
+.portfolio-lightbox::backdrop { background: #000b; }
+.portfolio-lightbox img { display: block; max-width: 90vw; max-height: 85vh; object-fit: contain; }
+.portfolio-lightbox button { position: absolute; right: .2rem; top: .2rem; font: 1.5rem system-ui; color: white; background: #000c; border: 0; cursor: pointer; }
+.portfolio-extra-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  gap: .75rem;
+  width: min(100%, 78rem);
+  margin: 1.5rem auto;
+  grid-area: 3 / 1;
+}
+.portfolio-extra-gallery img { display: block; width: 100%; height: auto; }
