@@ -177,6 +177,26 @@ for (const list of document.querySelectorAll('[role="tablist"][data-hook="TabsLi
 }
 
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+const entrances = document.querySelectorAll('[data-portfolio-enter]');
+if (entrances.length && !reducedMotion.matches && 'IntersectionObserver' in window) {
+  const observer = new IntersectionObserver(entries => {
+    for (const { target, isIntersecting, boundingClientRect } of entries) {
+      if (!isIntersecting) continue;
+      observer.unobserve(target);
+      if (reducedMotion.matches) continue;
+
+      target.style.setProperty('--motion-left', boundingClientRect.left + 'px');
+      target.dataset.portfolioEnter = 'playing';
+      // The original CSS only fills backwards. The content is visible again even if this callback fails.
+      Promise.allSettled(target.getAnimations().map(animation => animation.finished)).then(() => {
+        target.dataset.portfolioEnter = 'done';
+        target.style.removeProperty('--motion-left');
+      });
+    }
+  }, { rootMargin: '0px 0px -40px 0px' });
+  for (const target of entrances) observer.observe(target);
+}
+
 if (!reducedMotion.matches) {
   for (const item of portfolio.background) {
     const host = document.getElementById(item.container);
