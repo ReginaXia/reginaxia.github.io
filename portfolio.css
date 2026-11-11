@@ -105,6 +105,7 @@
 }
 .portfolio-book-track.is-dragging { scroll-snap-type: none; cursor: grabbing; }
 .portfolio-book-page {
+  position: relative;
   display: grid;
   place-items: center;
   flex: 0 0 100%;
@@ -122,21 +123,28 @@
   pointer-events: none;
 }
 .portfolio-book button:not([hidden]) { cursor: pointer; }
-.portfolio-book-stage button {
+.portfolio-book-arrow {
+  display: grid;
+  place-items: center;
   position: absolute;
+  z-index: 2;
   top: 50%;
   transform: translateY(-50%);
-  width: 42px;
-  height: 42px;
-  border: 1px solid #c8c3d1;
+  width: 44px;
+  height: 44px;
+  border: 2px solid #fff;
   border-radius: 50%;
-  background: #fff;
-  color: #181717;
-  font: 30px/1 system-ui, sans-serif;
+  background: #292534;
+  color: #fff;
+  box-shadow: 0 1px 5px #0005;
+  font: bold 36px/1 Arial, sans-serif;
+  text-decoration: none;
+  cursor: pointer;
 }
-.portfolio-book-stage button[aria-disabled="true"] { opacity: .45; cursor: default; }
-.portfolio-book-stage [data-book-prev] { left: 4px; }
-.portfolio-book-stage [data-book-next] { right: 4px; }
+.portfolio-book-arrow[aria-disabled="true"] { background: #625d6b; cursor: default; }
+.portfolio-book-arrow[data-book-prev] { left: 6px; }
+.portfolio-book-arrow[data-book-next] { right: 6px; }
+.portfolio-book .portfolio-book-arrow:focus-visible { outline: 2px solid #fff; outline-offset: -6px; }
 .portfolio-book-thumbs:not([hidden]) {
   position: relative;
   display: flex;

@@ -141,8 +141,6 @@ for (const list of document.querySelectorAll('[role="tablist"][data-hook="TabsLi
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 for (const book of document.querySelectorAll('.portfolio-book')) {
   const track = book.querySelector('.portfolio-book-track');
-  const prev = book.querySelector('[data-book-prev]');
-  const next = book.querySelector('[data-book-next]');
   const strip = book.querySelector('.portfolio-book-thumbs');
   const thumbs = [...strip.querySelectorAll('[data-book-page]')];
   const last = thumbs.length - 1;
@@ -157,8 +155,6 @@ for (const book of document.querySelectorAll('.portfolio-book')) {
     thumbs[active]?.removeAttribute('aria-current');
     const thumb = thumbs[index];
     thumb.setAttribute('aria-current', 'page');
-    prev.setAttribute('aria-disabled', String(index === 0));
-    next.setAttribute('aria-disabled', String(index === last));
     active = index;
     if (thumb.offsetLeft < strip.scrollLeft || thumb.offsetLeft + thumb.offsetWidth > strip.scrollLeft + strip.clientWidth) {
       strip.scrollLeft = thumb.offsetLeft - (strip.clientWidth - thumb.offsetWidth) / 2;
@@ -172,8 +168,13 @@ for (const book of document.querySelectorAll('.portfolio-book')) {
     track.scrollTo({ left: destination * track.clientWidth, behavior: smooth ? 'smooth' : 'instant' });
   }
 
-  prev.addEventListener('click', () => show((destination ?? position()) - 1));
-  next.addEventListener('click', () => show((destination ?? position()) + 1));
+  track.addEventListener('click', event => {
+    const arrow = event.target.closest('[data-book-target]');
+    if (!arrow) return;
+    event.preventDefault();
+    show(Number(arrow.dataset.bookTarget));
+    if (event.detail === 0) track.focus({ preventScroll: true });
+  });
   thumbs.forEach((thumb, i) => thumb.addEventListener('click', () => show(i)));
   track.addEventListener('keydown', event => {
     const current = destination ?? position();
@@ -194,7 +195,7 @@ for (const book of document.querySelectorAll('.portfolio-book')) {
   track.addEventListener('pointerdown', event => {
     destination = undefined;
     // Leave touch and trackpad scrolling to the browser.
-    if (event.pointerType !== 'mouse' || event.button !== 0) return;
+    if (event.pointerType !== 'mouse' || event.button !== 0 || event.target.closest('.portfolio-book-arrow')) return;
     drag = { x: event.clientX, left: track.scrollLeft, page: position() };
     track.setPointerCapture(event.pointerId);
     track.classList.add('is-dragging');
@@ -213,7 +214,7 @@ for (const book of document.querySelectorAll('.portfolio-book')) {
   }
   track.addEventListener('pointerup', endDrag);
   track.addEventListener('pointercancel', endDrag);
-  prev.hidden = next.hidden = strip.hidden = false;
+  strip.hidden = false;
   highlight(position());
 }
 
