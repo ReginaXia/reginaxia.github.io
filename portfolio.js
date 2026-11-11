@@ -1,5 +1,43 @@
 const portfolio = JSON.parse(document.getElementById('portfolio-data').textContent);
 
+for (const reader of document.querySelectorAll('.portfolio-reader')) {
+  const pages = new Map([...reader.querySelectorAll('.portfolio-reader-page')]
+    .map(page => ['#' + page.id, page]));
+  const firstPage = reader.querySelector('.portfolio-reader-first');
+  let currentPage;
+
+  function showPage(page) {
+    currentPage?.removeAttribute('data-current-page');
+    page.setAttribute('data-current-page', '');
+    currentPage = page;
+  }
+
+  function syncPage() {
+    showPage(pages.get(location.hash) || firstPage);
+  }
+
+  reader.addEventListener('click', event => {
+    const link = event.target.closest('.portfolio-reader-controls a');
+    if (!link || event.defaultPrevented || event.button !== 0 ||
+        event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+    const page = pages.get(link.hash);
+    if (!page) return;
+    const controlIndex = [...link.parentElement.children].indexOf(link);
+    // Update the address without triggering the browser's anchor scroll.
+    history.pushState(null, '', link.hash);
+    event.preventDefault();
+    showPage(page);
+    const nextControl = page.querySelector('.portfolio-reader-controls').children[controlIndex];
+    (nextControl.matches('a') ? nextControl : page).focus({ preventScroll: true });
+  });
+
+  window.addEventListener('popstate', syncPage);
+  window.addEventListener('hashchange', syncPage);
+  syncPage();
+  reader.setAttribute('data-preserve-scroll', '');
+}
+
 function element(tag, attributes = {}) {
   const node = document.createElement(tag);
   for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, value);

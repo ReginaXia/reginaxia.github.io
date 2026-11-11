@@ -98,6 +98,9 @@
 .portfolio-reader-page:target { display: grid; }
 /* The default page comes last so any linked page can hide it. */
 .portfolio-reader-page:target ~ .portfolio-reader-first { display: none; }
+.portfolio-reader[data-preserve-scroll] { overflow-anchor: none; }
+.portfolio-reader[data-preserve-scroll] > .portfolio-reader-page { display: none; }
+.portfolio-reader[data-preserve-scroll] > .portfolio-reader-page[data-current-page] { display: grid; }
 .portfolio-reader-page > img {
   display: block;
   width: 100%;
