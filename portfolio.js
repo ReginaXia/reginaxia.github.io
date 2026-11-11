@@ -177,12 +177,27 @@ for (const list of document.querySelectorAll('[role="tablist"][data-hook="TabsLi
 }
 
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-const mirageEntrances = document.querySelectorAll('[data-mirage-entrance] img');
-if (mirageEntrances.length && !reducedMotion.matches && 'IntersectionObserver' in window) {
+function animateProjectImages() {
+  if (reducedMotion.matches || !('IntersectionObserver' in window)) return;
+  const intro = !portfolio.mirage && document.querySelector('main [data-testid="richTextElement"]');
+  if (intro) {
+    const introObserver = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      introObserver.disconnect();
+      if (!reducedMotion.matches) {
+        intro.animate([{ opacity: 0.85, translate: '0 6px' }, { opacity: 1, translate: '0 0' }],
+          { duration: 380, easing: 'ease-out' });
+      }
+    });
+    introObserver.observe(intro);
+  }
+  const selector = portfolio.mirage ? '[data-mirage-entrance] img' : 'main img, .portfolio-extra-gallery img';
   const observer = new IntersectionObserver(entries => {
     for (const { target: image, isIntersecting } of entries) {
       if (!isIntersecting) continue;
       observer.unobserve(image);
+      const { width, height } = image.getBoundingClientRect();
+      if (width < 140 || height < 100) continue;
       image.decode().then(() => {
         const { top, bottom } = image.getBoundingClientRect();
         if (reducedMotion.matches) return;
@@ -191,14 +206,15 @@ if (mirageEntrances.length && !reducedMotion.matches && 'IntersectionObserver' i
           return;
         }
         image.animate([
-          { opacity: 0.62, translate: '0 16px' },
+          { opacity: portfolio.mirage ? 0.62 : 0.8, translate: portfolio.mirage ? '0 16px' : '0 10px' },
           { opacity: 1, translate: '0 0' }
-        ], { duration: 620, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' });
-        image.closest('[data-mirage-entrance]').dataset.mirageEntrance = 'played';
+        ], { duration: portfolio.mirage ? 620 : 450, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' });
       }).catch(() => {});
     }
   }, { threshold: 0.05 });
-  for (const image of mirageEntrances) observer.observe(image);
+  for (const image of document.querySelectorAll(selector)) {
+    if (!image.closest('.portfolio-reader')) observer.observe(image);
+  }
 }
 
 function startBackgroundVideo(host, item) {
@@ -220,7 +236,7 @@ if (!reducedMotion.matches) {
   for (const item of portfolio.background) {
     const host = document.getElementById(item.container);
     if (!host) continue;
-    if (item.defer && 'IntersectionObserver' in window) deferred.set(host, item);
+    if ('IntersectionObserver' in window) deferred.set(host, item);
     else startBackgroundVideo(host, item);
   }
   if (deferred.size) {
@@ -264,7 +280,7 @@ for (const tile of document.querySelectorAll('[data-hook="item-container"][data-
   const imageSlot = tile.querySelector('[data-hook="image-item"], [data-hook="item-wrapper"]');
   const preview = item.preview || item.image;
   if (!tileImage && imageSlot && preview) {
-    tileImage = element('img', { src: preview, alt: item.title, loading: 'lazy', class: 'portfolio-gallery-image' });
+    tileImage = element('img', { src: preview, alt: item.title, loading: 'lazy', decoding: 'async', class: 'portfolio-gallery-image' });
     imageSlot.append(tileImage);
   }
   if (tileImage && item.image && !tileImage.getAttribute('src')?.startsWith('/assets/')) {
@@ -342,7 +358,7 @@ if (remaining.length) {
   const gallery = element('section', { class: 'portfolio-extra-gallery', 'aria-label': 'More project images' });
   for (const [, item] of remaining) {
     const link = element('a', { href: item.link || item.image });
-    link.append(element('img', { src: item.preview || item.image, alt: item.title, loading: 'lazy' }));
+    link.append(element('img', { src: item.preview || item.image, alt: item.title, loading: 'lazy', decoding: 'async' }));
     if (!item.link) link.addEventListener('click', event => {
       event.preventDefault();
       activate(item);
@@ -353,3 +369,5 @@ if (remaining.length) {
   if (footer) footer.before(gallery);
   else document.body.append(gallery);
 }
+
+animateProjectImages();
