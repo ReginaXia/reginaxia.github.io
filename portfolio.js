@@ -36,6 +36,7 @@ for (const item of portfolio.videos) {
   } else if (item.embed) {
     host.replaceChildren(element('iframe', {
       src: item.embed, title: item.title, loading: 'lazy', allowfullscreen: '',
+      referrerpolicy: 'strict-origin-when-cross-origin',
       allow: 'accelerometer; encrypted-media; gyroscope; picture-in-picture; web-share', class: 'portfolio-player'
     }));
   } else {
@@ -43,6 +44,39 @@ for (const item of portfolio.videos) {
     link.textContent = item.title;
     host.replaceChildren(link);
   }
+}
+
+for (const list of document.querySelectorAll('[role="tablist"][data-hook="TabsListWrapper"]')) {
+  const tabs = [...list.querySelectorAll('[role="tab"][aria-controls]')];
+  const panels = tabs.map(tab => document.getElementById(tab.getAttribute('aria-controls'))?.closest('[role="tabpanel"]'));
+  if (!tabs.length || panels.some(panel => !panel)) continue;
+
+  function select(index, focus = false) {
+    tabs.forEach((tab, position) => {
+      const selected = position === index;
+      tab.tabIndex = selected ? 0 : -1;
+      tab.setAttribute('aria-selected', String(selected));
+      tab.classList.toggle('TabsList2027980309--current', selected);
+      const panel = panels[position];
+      panel.setAttribute('aria-hidden', String(!selected));
+      panel.classList.toggle('Tabscomponent1176390459--isVisible', selected);
+      if (!selected) for (const video of panel.querySelectorAll('video')) video.pause();
+    });
+    if (focus) tabs[index].focus();
+  }
+
+  tabs.forEach((tab, index) => {
+    tab.addEventListener('click', () => select(index));
+    tab.addEventListener('keydown', event => {
+      const moves = {
+        ArrowRight: (index + 1) % tabs.length, ArrowLeft: (index - 1 + tabs.length) % tabs.length,
+        Home: 0, End: tabs.length - 1, Enter: index, ' ': index
+      };
+      if (!Object.hasOwn(moves, event.key)) return;
+      event.preventDefault();
+      select(moves[event.key], true);
+    });
+  });
 }
 
 if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
