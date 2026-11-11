@@ -31,7 +31,66 @@ if (portfolio.mobile) {
 for (const item of portfolio.videos) {
   const host = document.getElementById(item.id);
   if (!host) continue;
-  if (item.file) {
+  const preview = host.querySelector('.portfolio-youtube');
+  if (preview && item.embed) {
+    const stage = preview.querySelector('.portfolio-youtube-stage');
+    const play = stage.querySelector('button');
+    const status = stage.querySelector('[role="status"]');
+    play.hidden = false;
+    play.addEventListener('click', () => {
+      play.disabled = true;
+      status.textContent = 'Loading YouTube…';
+      const url = new URL(item.embed);
+      url.searchParams.set('enablejsapi', '1');
+      url.searchParams.set('origin', location.origin);
+      url.searchParams.set('autoplay', '1');
+      url.searchParams.set('playsinline', '1');
+      const frame = element('iframe', {
+        src: url.href, title: 'About Regina Xia video', allowfullscreen: '',
+        referrerpolicy: 'strict-origin-when-cross-origin',
+        allow: 'autoplay; encrypted-media; picture-in-picture; web-share'
+      });
+      let failed = false;
+      let player;
+      function unavailable() {
+        if (failed) return;
+        failed = true;
+        clearTimeout(timeout);
+        player?.destroy();
+        frame.remove();
+        play.hidden = false;
+        play.disabled = false;
+        status.textContent = 'The embedded player could not load. Use Watch on YouTube below.';
+      }
+      const timeout = setTimeout(unavailable, 9000);
+      stage.prepend(frame);
+      function connectPlayer() {
+        if (failed) return;
+        player = new window.YT.Player(frame, { events: {
+          onReady: () => {
+            clearTimeout(timeout);
+            frame.classList.add('is-ready');
+            status.textContent = '';
+            play.hidden = true;
+          },
+          onError: unavailable
+        } });
+      }
+      if (window.YT?.Player) connectPlayer();
+      else {
+        window.onYouTubeIframeAPIReady = connectPlayer;
+        let api = document.querySelector('script[data-youtube-api]');
+        if (!api) {
+          api = element('script', { src: 'https://www.youtube.com/iframe_api', 'data-youtube-api': '' });
+          api.addEventListener('error', () => {
+            api.remove();
+            unavailable();
+          }, { once: true });
+          document.head.append(api);
+        }
+      }
+    });
+  } else if (item.file) {
     host.replaceChildren(element('video', { src: item.file, controls: '', playsinline: '', preload: 'metadata', class: 'portfolio-player' }));
   } else if (item.embed) {
     host.replaceChildren(element('iframe', {

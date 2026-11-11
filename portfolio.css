@@ -4,6 +4,48 @@
   display: block;
   border: 0;
 }
+.portfolio-youtube {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  width: 100%;
+  height: 100%;
+  background: #191720;
+  color: #fff;
+  font: 15px/1.4 system-ui, sans-serif;
+}
+.portfolio-youtube-stage {
+  position: relative;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 8px;
+  text-align: center;
+}
+.portfolio-youtube-stage button {
+  padding: 10px 16px;
+  border-radius: 6px;
+  background: #fff;
+  color: #191720;
+  font: 700 15px/1.4 system-ui, sans-serif;
+  cursor: pointer;
+}
+.portfolio-youtube-stage p { max-width: 30ch; margin: 0 12px; }
+.portfolio-youtube-stage p:empty { display: none; }
+.portfolio-youtube-stage iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  visibility: hidden;
+}
+.portfolio-youtube-stage iframe.is-ready { visibility: visible; }
+.portfolio-youtube > a {
+  justify-self: center;
+  padding: 8px 12px;
+  color: #fff;
+  text-decoration: underline;
+}
 .portfolio-background {
   position: absolute;
   inset: 0;
